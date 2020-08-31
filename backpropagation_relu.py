@@ -11,15 +11,18 @@ hidden_weight_2 = random.random((3, 1))
 
 output_weight = random.random((2, 1))
 
-#training_set_outputs = array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])
-training_set_outputs = array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1])
+training_set_outputs = array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])
+#training_set_outputs = array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1])
+
+def sigmoid_raw(v):
+    return (1 / (1 + np.exp(-1 * v)))
 
 def sigmoid(inputs, weights):
     v = dot(inputs, weights)
-    return (1 / (1 + np.exp(-1 * v)))
+    return sigmoid_raw(v)
 
-def sigmoid_d(inputs, weights):
-    return sigmoid(inputs, weights) * (1- sigmoid(inputs, weights)) 
+def sigmoid_d(v):
+    return sigmoid_raw(v) * (1- sigmoid_raw(v)) 
 
 def Relu(inputs, weights):
     t = dot(inputs, weights)
@@ -47,8 +50,9 @@ def forward(inputs):
 
     o_h = array([o_h_1, o_h_2]).T[0]
     #print(o_h)
+    out = Relu(o_h, output_weight)
     #out = sigmoid(o_h, output_weight)
-    out = dot(o_h, output_weight)
+    #out = dot(o_h, output_weight)
 
     return o_h_1, o_h_2, o_h, out
 def loss(pred, y):
@@ -57,7 +61,7 @@ def loss(pred, y):
         b.append( (pred[i] - y[i] ) )
     return b
 def get_loss_val(b):
-    sum = 0
+    sum = 0.0
     for i in range(len(b)):
         sum += b[i]
     return sum / len(b)
@@ -77,40 +81,42 @@ for ep in range(epoch):
         #loss' * act(out)'* out_in
         
         b = loss(out, training_set_outputs)
-        
-        #s = sigmoid_d(o_h, output_weight)
+        #d = sigmoid_d(out)
+        d = Relu_d(out)
 
         #d_loss = []
-        sum = 0
+        sum = 0.0
         for i in range(len(b)):
             s1 = (o_h_1[i] * b[i])
             #s2 = s[i] * s1
-            s2 = 1 * s1
+            s2 = d[i] * s1
             sum += s2
             #d_loss.append(s2)
         
         ow = sum / len(b)
         output_weight[0] -= learning_rate * ow
 
-        sum = 0
+        sum = 0.0
         for i in range(len(b)):
             s1 = (o_h_2[i] * b[i])
             #s2 = s[i] * s1
-            s2 = 1 * s1
+            s2 = d[i] * s1
             sum += s2
             #d_loss.append(s2)
         
         ow = sum / len(b)
         output_weight[1] -= learning_rate * ow
         
-        pre_bp = b * 1
+        pre_bp = []
+        for i in range(len(b)):
+            pre_bp.append(b[i] * d[i])
 
         #hidden_weight_1[0] update
         #p * output_weight[0] * relu(o_h_1)' * input[n]
         dr = Relu_d(o_h_1) 
         #dr = sigmoid_d(training_set_inputs, hidden_weight_1) 
         for n in range(len(hidden_weight_1)):
-            sum = 0
+            sum = 0.0
             for i in range(len(training_set_inputs)):
                 #loss' * relu'
                 s = pre_bp[i] * output_weight[0] * dr[i] * training_set_inputs[i][n]
@@ -125,7 +131,7 @@ for ep in range(epoch):
         dr = Relu_d(o_h_2) 
         #dr = sigmoid_d(training_set_inputs, hidden_weight_1) 
         for n in range(len(hidden_weight_2)):
-            sum = 0
+            sum = 0.0
             for i in range(len(training_set_inputs)):
                 #loss' * relu'
                 s = pre_bp[i] * output_weight[1] * dr[i] * training_set_inputs[i][n]
